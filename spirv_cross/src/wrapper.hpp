@@ -120,6 +120,18 @@ extern "C"
         size_t num;
     } ScResourceArray;
 
+    typedef struct ScBuiltInResource {
+        spv::BuiltIn builtin;
+        uint32_t value_type_id;
+        ScResource resource;
+    } ScBuiltInResource;
+
+    typedef struct ScBuiltInResourceArray
+    {
+        ScBuiltInResource *data;
+        size_t num;
+    } ScBuiltInResourceArray;
+
     typedef struct ScShaderResources
     {
         ScResourceArray uniform_buffers;
@@ -130,9 +142,13 @@ extern "C"
         ScResourceArray storage_images;
         ScResourceArray sampled_images;
         ScResourceArray atomic_counters;
+        ScResourceArray acceleration_structures;
         ScResourceArray push_constant_buffers;
+        ScResourceArray shader_record_buffers;
         ScResourceArray separate_images;
         ScResourceArray separate_samplers;
+        ScBuiltInResourceArray builtin_inputs;
+        ScBuiltInResourceArray builtin_outputs;
     } ScShaderResources;
 
     typedef struct ScSpecializationConstant
@@ -175,9 +191,10 @@ extern "C"
     ScInternalResult sc_internal_compiler_msl_set_options(const ScInternalCompilerMsl *compiler, const ScMslCompilerOptions *options);
     ScInternalResult sc_internal_compiler_msl_get_is_rasterization_disabled(const ScInternalCompilerMsl *compiler, bool *is_rasterization_disabled);
     ScInternalResult sc_internal_compiler_msl_compile(const ScInternalCompilerBase *compiler, const char **shader,
-                                                      const spirv_cross::MSLShaderInput *p_vat_overrides, const size_t vat_override_count,
+                                                      const spirv_cross::MSLShaderInterfaceVariable *p_vat_overrides, const size_t vat_override_count,
                                                       const spirv_cross::MSLResourceBinding *p_res_overrides, const size_t res_override_count,
                                                       const ScMslConstSamplerMapping *p_const_samplers, const size_t const_sampler_count);
+    ScInternalResult sc_internal_compiler_get_automatic_msl_resource_binding(const ScInternalCompilerMsl *compiler, uint32_t id, uint32_t *result);
 #endif
 
 #ifdef SPIRV_CROSS_WRAPPER_GLSL

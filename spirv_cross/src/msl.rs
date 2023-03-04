@@ -5,14 +5,13 @@ use std::collections::BTreeMap;
 use std::ffi::{CStr, CString};
 use std::marker::PhantomData;
 use std::ptr;
-use std::u8;
 
 /// A MSL target.
 #[derive(Debug, Clone)]
 pub enum Target {}
 
 pub struct TargetData {
-    vertex_attribute_overrides: Vec<br::spirv_cross::MSLShaderInput>,
+    vertex_attribute_overrides: Vec<br::spirv_cross::MSLShaderInterfaceVariable>,
     resource_binding_overrides: Vec<br::spirv_cross::MSLResourceBinding>,
     const_samplers: Vec<br::ScMslConstSamplerMapping>,
 }
@@ -26,29 +25,16 @@ impl spirv::Target for Target {
 pub struct VertexAttributeLocation(pub u32);
 
 /// Format of the vertex attribute
-#[derive(Debug, Clone, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub enum Format {
-    Other,
-    Uint8,
-    Uint16,
-}
-
-impl Format {
-    fn as_raw(&self) -> br::spirv_cross::MSLShaderInputFormat {
-        use self::Format::*;
-        match self {
-            Other => br::spirv_cross::MSLShaderInputFormat_MSL_SHADER_INPUT_FORMAT_OTHER,
-            Uint8 => br::spirv_cross::MSLShaderInputFormat_MSL_SHADER_INPUT_FORMAT_UINT8,
-            Uint16 => br::spirv_cross::MSLShaderInputFormat_MSL_SHADER_INPUT_FORMAT_UINT16,
-        }
-    }
-}
+pub use crate::bindings::spirv_cross::MSLShaderVariableFormat as Format;
+pub use crate::bindings::spirv_cross::MSLShaderVariableRate as Rate;
+use crate::bindings::spirv_cross::SPIRType_BaseType;
 
 /// Vertex attribute description for overriding
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct VertexAttribute {
     pub buffer_id: u32,
     pub format: Format,
+    pub rate: Rate,
     pub built_in: Option<spirv::BuiltIn>,
     pub vecsize: u32,
 }
@@ -64,6 +50,7 @@ pub struct ResourceBindingLocation {
 /// Resource binding description for overriding
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct ResourceBinding {
+    pub base_type: SPIRType_BaseType,
     pub buffer_id: u32,
     pub texture_id: u32,
     pub sampler_id: u32,
@@ -77,58 +64,12 @@ pub struct SamplerLocation {
     pub binding: u32,
 }
 
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub enum SamplerCoord {
-    Normalized = 0,
-    Pixel = 1,
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub enum SamplerFilter {
-    Nearest = 0,
-    Linear = 1,
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub enum SamplerMipFilter {
-    None = 0,
-    Nearest = 1,
-    Linear = 2,
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub enum SamplerAddress {
-    ClampToZero = 0,
-    ClampToEdge = 1,
-    ClampToBorder = 2,
-    Repeat = 3,
-    MirroredRepeat = 4,
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub enum SamplerCompareFunc {
-    Never = 0,
-    Less = 1,
-    LessEqual = 2,
-    Greater = 3,
-    GreaterEqual = 4,
-    Equal = 5,
-    NotEqual = 6,
-    Always = 7,
-}
-
-#[repr(C)]
-#[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
-pub enum SamplerBorderColor {
-    TransparentBlack = 0,
-    OpaqueBlack = 1,
-    OpaqueWhite = 2,
-}
+pub use crate::bindings::spirv_cross::MSLSamplerCoord as SamplerCoord;
+pub use crate::bindings::spirv_cross::MSLSamplerFilter as SamplerFilter;
+pub use crate::bindings::spirv_cross::MSLSamplerMipFilter as SamplerMipFilter;
+pub use crate::bindings::spirv_cross::MSLSamplerAddress as SamplerAddress;
+pub use crate::bindings::spirv_cross::MSLSamplerCompareFunc as SamplerCompareFunc;
+pub use crate::bindings::spirv_cross::MSLSamplerBorderColor as SamplerBorderColor;
 
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
@@ -145,41 +86,17 @@ impl From<f32> for LodBase16 {
     }
 }
 
-impl Into<f32> for LodBase16 {
-    fn into(self) -> f32 {
-        self.0 as f32 / 16.0
+impl From<LodBase16> for f32 {
+    fn from(val: LodBase16) -> Self {
+        val.0 as f32 / 16.0
     }
 }
 
-/// MSL format resolution.
-#[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum FormatResolution {
-    _444 = 0,
-    _422 = 1,
-    _420 = 2,
-}
-
-/// MSL chroma location.
-#[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum ChromaLocation {
-    CositedEven = 0,
-    LocationMidpoint = 1,
-}
-
-/// MSL component swizzle.
-#[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum ComponentSwizzle {
-    Identity = 0,
-    Zero = 1,
-    One = 2,
-    R = 3,
-    G = 4,
-    B = 5,
-    A = 6,
-}
+pub use crate::bindings::spirv_cross::MSLFormatResolution as FormatResolution;
+pub use crate::bindings::spirv_cross::MSLChromaLocation as ChromaLocation;
+pub use crate::bindings::spirv_cross::MSLComponentSwizzle as ComponentSwizzle;
+pub use crate::bindings::spirv_cross::MSLSamplerYCbCrModelConversion as SamplerYCbCrModelConversion;
+pub use crate::bindings::spirv_cross::MSLSamplerYCbCrRange as SamplerYCbCrRange;
 
 /// Data fully defining a constant sampler.
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
@@ -207,25 +124,6 @@ pub struct SamplerData {
     pub ycbcr_model: SamplerYCbCrModelConversion,
     pub ycbcr_range: SamplerYCbCrRange,
     pub bpc: u32,
-}
-
-/// A MSL sampler YCbCr model conversion.
-#[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum SamplerYCbCrModelConversion {
-    RgbIdentity = 0,
-    YCbCrIdentity = 1,
-    YCbCrBt709 = 2,
-    YCbCrBt601 = 3,
-    YCbCrBt2020 = 4,
-}
-
-/// A MSL sampler YCbCr range.
-#[repr(C)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum SamplerYCbCrRange {
-    ItuFull = 0,
-    ItuNarrow = 1,
 }
 
 /// A MSL shader platform.
@@ -265,19 +163,10 @@ impl Version {
     }
 }
 
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Default, Debug, Clone, Hash, Eq, PartialEq)]
 pub struct CompilerVertexOptions {
     pub invert_y: bool,
     pub transform_clip_space: bool,
-}
-
-impl Default for CompilerVertexOptions {
-    fn default() -> Self {
-        CompilerVertexOptions {
-            invert_y: false,
-            transform_clip_space: false,
-        }
-    }
 }
 
 /// MSL compiler options.
@@ -363,7 +252,7 @@ impl Default for CompilerOptions {
     }
 }
 
-impl<'a> spirv::Parse<Target> for spirv::Ast<Target> {
+impl spirv::Parse<Target> for spirv::Ast<Target> {
     fn parse(module: &spirv::Module) -> Result<Self, ErrorCode> {
         let mut sc_compiler = ptr::null_mut();
         unsafe {
@@ -396,7 +285,7 @@ impl spirv::Compile<Target> for spirv::Ast<Target> {
     fn set_compiler_options(&mut self, options: &CompilerOptions) -> Result<(), ErrorCode> {
         if let Some((name, model)) = &options.entry_point {
             let name_raw = CString::new(name.as_str()).map_err(|_| ErrorCode::Unhandled)?;
-            let model = model.as_raw();
+            let model = *model;
             unsafe {
                 check!(br::sc_internal_compiler_set_entry_point(
                     self.compiler.sc_compiler,
@@ -438,7 +327,8 @@ impl spirv::Compile<Target> for spirv::Ast<Target> {
         self.compiler.target_data.resource_binding_overrides.extend(
             options.resource_binding_overrides.iter().map(|(loc, res)| {
                 br::spirv_cross::MSLResourceBinding {
-                    stage: loc.stage.as_raw(),
+                    stage: loc.stage,
+                    basetype: res.base_type,
                     desc_set: loc.desc_set,
                     binding: loc.binding,
                     msl_buffer: res.buffer_id,
@@ -452,11 +342,13 @@ impl spirv::Compile<Target> for spirv::Ast<Target> {
         self.compiler.target_data.vertex_attribute_overrides.clear();
         self.compiler.target_data.vertex_attribute_overrides.extend(
             options.vertex_attribute_overrides.iter().map(|(loc, vat)| {
-                br::spirv_cross::MSLShaderInput {
+                br::spirv_cross::MSLShaderInterfaceVariable {
                     location: loc.0,
-                    format: vat.format.as_raw(),
+                    component: 0,
+                    format: vat.format,
                     builtin: spirv::built_in_as_raw(vat.built_in),
                     vecsize: vat.vecsize,
+                    rate: vat.rate,
                 }
             }),
         );
@@ -465,21 +357,20 @@ impl spirv::Compile<Target> for spirv::Ast<Target> {
         self.compiler
             .target_data
             .const_samplers
-            .extend(options.const_samplers.iter().map(|(loc, data)| unsafe {
-                use std::mem::transmute;
+            .extend(options.const_samplers.iter().map(|(loc, data)|
                 br::ScMslConstSamplerMapping {
                     desc_set: loc.desc_set,
                     binding: loc.binding,
                     sampler: br::spirv_cross::MSLConstexprSampler {
-                        coord: transmute(data.coord),
-                        min_filter: transmute(data.min_filter),
-                        mag_filter: transmute(data.mag_filter),
-                        mip_filter: transmute(data.mip_filter),
-                        s_address: transmute(data.s_address),
-                        t_address: transmute(data.t_address),
-                        r_address: transmute(data.r_address),
-                        compare_func: transmute(data.compare_func),
-                        border_color: transmute(data.border_color),
+                        coord: data.coord,
+                        min_filter: data.min_filter,
+                        mag_filter: data.mag_filter,
+                        mip_filter: data.mip_filter,
+                        s_address: data.s_address,
+                        t_address: data.t_address,
+                        r_address: data.r_address,
+                        compare_func: data.compare_func,
+                        border_color: data.border_color,
                         lod_clamp_min: data.lod_clamp_min.into(),
                         lod_clamp_max: data.lod_clamp_max.into(),
                         max_anisotropy: data.max_anisotropy,
@@ -488,18 +379,18 @@ impl spirv::Compile<Target> for spirv::Ast<Target> {
                             || data.lod_clamp_max != LodBase16::MAX,
                         anisotropy_enable: data.max_anisotropy != 0,
                         bpc: data.bpc,
-                        chroma_filter: transmute(data.chroma_filter),
+                        chroma_filter: data.chroma_filter,
                         planes: data.planes,
-                        resolution: transmute(data.resolution),
-                        swizzle: transmute(data.swizzle),
-                        x_chroma_offset: transmute(data.x_chroma_offset),
-                        y_chroma_offset: transmute(data.y_chroma_offset),
+                        resolution: data.resolution,
+                        swizzle: data.swizzle,
+                        x_chroma_offset: data.x_chroma_offset,
+                        y_chroma_offset: data.y_chroma_offset,
                         ycbcr_conversion_enable: data.ycbcr_conversion_enable,
-                        ycbcr_model: transmute(data.ycbcr_model),
-                        ycbcr_range: transmute(data.ycbcr_range),
+                        ycbcr_model: data.ycbcr_model,
+                        ycbcr_range: data.ycbcr_range,
                     },
                 }
-            }));
+            ));
 
         Ok(())
     }
@@ -546,6 +437,18 @@ impl spirv::Ast<Target> {
                 &mut is_disabled
             ));
             Ok(!is_disabled)
+        }
+    }
+
+    pub fn get_automatic_msl_resource_binding(&self, id: u32) -> Result<u32, ErrorCode> {
+        unsafe {
+            let mut res = 0;
+            check!(br::sc_internal_compiler_get_automatic_msl_resource_binding(
+                self.compiler.sc_compiler,
+                id,
+                &mut res
+            ));
+            Ok(res)
         }
     }
 }

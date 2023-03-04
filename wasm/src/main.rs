@@ -2,7 +2,7 @@ use std::process::Command;
 
 fn main() {
     let output = Command::new("emcc")
-        .args(&[
+        .args([
             "-O3",
             "-std=c++14",
             "-fno-exceptions",

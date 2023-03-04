@@ -48,19 +48,10 @@ impl ShaderModel {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CompilerVertexOptions {
     pub invert_y: bool,
     pub transform_clip_space: bool,
-}
-
-impl Default for CompilerVertexOptions {
-    fn default() -> CompilerVertexOptions {
-        CompilerVertexOptions {
-            invert_y: false,
-            transform_clip_space: false,
-        }
-    }
 }
 
 /// HLSL compiler options.
@@ -105,7 +96,7 @@ impl spirv::Parse<Target> for spirv::Ast<Target> {
                 check!(br::sc_internal_compiler_hlsl_new(
                     &mut compiler,
                     module.words.as_ptr() as *const u32,
-                    module.words.len() as usize,
+                    module.words.len(),
                 ));
             }
 
@@ -130,7 +121,7 @@ impl spirv::Compile<Target> for spirv::Ast<Target> {
     fn set_compiler_options(&mut self, options: &CompilerOptions) -> Result<(), ErrorCode> {
         if let Some((name, model)) = &options.entry_point {
             let name_raw = CString::new(name.as_str()).map_err(|_| ErrorCode::Unhandled)?;
-            let model = model.as_raw();
+            let model = *model;
             unsafe {
                 check!(br::sc_internal_compiler_set_entry_point(
                     self.compiler.sc_compiler,

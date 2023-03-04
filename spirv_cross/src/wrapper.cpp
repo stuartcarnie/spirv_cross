@@ -110,7 +110,7 @@ extern "C"
     }
 
     ScInternalResult sc_internal_compiler_msl_compile(const ScInternalCompilerBase *compiler, const char **shader,
-                                                      const spirv_cross::MSLShaderInput *p_vat_overrides, const size_t vat_override_count,
+                                                      const spirv_cross::MSLShaderInterfaceVariable *p_vat_overrides, const size_t vat_override_count,
                                                       const spirv_cross::MSLResourceBinding *p_res_overrides, const size_t res_override_count,
                                                       const ScMslConstSamplerMapping *p_const_samplers, const size_t const_sampler_count)
     {
@@ -175,6 +175,11 @@ extern "C"
     ScInternalResult sc_internal_compiler_msl_get_is_rasterization_disabled(const ScInternalCompilerMsl *compiler, bool *is_rasterization_disabled)
     {
         INTERNAL_RESULT(*is_rasterization_disabled = ((spirv_cross::CompilerMSL *)compiler)->get_is_rasterization_disabled();)
+    }
+
+    ScInternalResult sc_internal_compiler_get_automatic_msl_resource_binding(const ScInternalCompilerMsl *compiler, uint32_t id, uint32_t *result)
+    {
+        INTERNAL_RESULT(*result = ((spirv_cross::CompilerMSL *)compiler)->get_automatic_msl_resource_binding(id);)
     }
 #endif
 
@@ -359,6 +364,33 @@ extern "C"
         }
     }
 
+
+    void fill_builtin_resource_array(ScBuiltInResourceArray *resources, const spirv_cross::SmallVector<spirv_cross::BuiltInResource> &sc_resources)
+    {
+        auto const sc_size = sc_resources.size();
+
+        if (sc_size == 0)
+        {
+            resources->num = 0;
+            resources->data = 0x0;
+            return;
+        }
+
+        resources->num = sc_size;
+        resources->data = (ScBuiltInResource *)malloc(sc_size * sizeof(ScBuiltInResource));
+        for (uint32_t i = 0; i < sc_size; i++)
+        {
+            auto const &bi_res = sc_resources[i];
+            resources->data[i].builtin = bi_res.builtin;
+            resources->data[i].value_type_id = bi_res.value_type_id;
+
+            resources->data[i].resource.id = bi_res.resource.id;
+            resources->data[i].resource.type_id = bi_res.resource.type_id;
+            resources->data[i].resource.base_type_id = bi_res.resource.base_type_id;
+            resources->data[i].resource.name = strdup(bi_res.resource.name.c_str());
+        }
+    }
+
     ScInternalResult sc_internal_compiler_get_shader_resources(const ScInternalCompilerBase *compiler, ScShaderResources *shader_resources)
     {
         INTERNAL_RESULT(
@@ -373,9 +405,13 @@ extern "C"
                 fill_resource_array(&shader_resources->storage_images, sc_resources.storage_images);
                 fill_resource_array(&shader_resources->sampled_images, sc_resources.sampled_images);
                 fill_resource_array(&shader_resources->atomic_counters, sc_resources.atomic_counters);
+                fill_resource_array(&shader_resources->acceleration_structures, sc_resources.acceleration_structures);
                 fill_resource_array(&shader_resources->push_constant_buffers, sc_resources.push_constant_buffers);
+                fill_resource_array(&shader_resources->shader_record_buffers, sc_resources.shader_record_buffers);
                 fill_resource_array(&shader_resources->separate_images, sc_resources.separate_images);
                 fill_resource_array(&shader_resources->separate_samplers, sc_resources.separate_samplers);
+                fill_builtin_resource_array(&shader_resources->builtin_inputs, sc_resources.builtin_inputs);
+                fill_builtin_resource_array(&shader_resources->builtin_outputs, sc_resources.builtin_outputs);
             } while (0);)
     }
 

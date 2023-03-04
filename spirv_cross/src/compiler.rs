@@ -8,172 +8,17 @@ use std::ffi::CString;
 use std::os::raw::c_void;
 use std::{mem::MaybeUninit, ptr};
 
-impl spirv::ExecutionModel {
-    fn from_raw(raw: br::spv::ExecutionModel) -> Result<Self, ErrorCode> {
-        use crate::bindings::root::spv::ExecutionModel as Em;
-        use crate::spirv::ExecutionModel::*;
-        match raw {
-            Em::ExecutionModelVertex => Ok(Vertex),
-            Em::ExecutionModelTessellationControl => Ok(TessellationControl),
-            Em::ExecutionModelTessellationEvaluation => Ok(TessellationEvaluation),
-            Em::ExecutionModelGeometry => Ok(Geometry),
-            Em::ExecutionModelFragment => Ok(Fragment),
-            Em::ExecutionModelGLCompute => Ok(GlCompute),
-            Em::ExecutionModelKernel => Ok(Kernel),
-            _ => Err(ErrorCode::Unhandled),
-        }
-    }
-
-    pub(crate) fn as_raw(self) -> br::spv::ExecutionModel {
-        use crate::bindings::root::spv::ExecutionModel as Em;
-        use crate::spirv::ExecutionModel::*;
-        match self {
-            Vertex => Em::ExecutionModelVertex,
-            TessellationControl => Em::ExecutionModelTessellationControl,
-            TessellationEvaluation => Em::ExecutionModelTessellationEvaluation,
-            Geometry => Em::ExecutionModelGeometry,
-            Fragment => Em::ExecutionModelFragment,
-            GlCompute => Em::ExecutionModelGLCompute,
-            Kernel => Em::ExecutionModelKernel,
-        }
-    }
-}
-
-impl spirv::Decoration {
-    fn as_raw(self) -> br::spv::Decoration {
-        use crate::bindings::root::spv::Decoration as D;
-        match self {
-            Decoration::RelaxedPrecision => D::DecorationRelaxedPrecision,
-            Decoration::SpecId => D::DecorationSpecId,
-            Decoration::Block => D::DecorationBlock,
-            Decoration::BufferBlock => D::DecorationBufferBlock,
-            Decoration::RowMajor => D::DecorationRowMajor,
-            Decoration::ColMajor => D::DecorationColMajor,
-            Decoration::ArrayStride => D::DecorationArrayStride,
-            Decoration::MatrixStride => D::DecorationMatrixStride,
-            Decoration::GlslShared => D::DecorationGLSLShared,
-            Decoration::GlslPacked => D::DecorationGLSLPacked,
-            Decoration::CPacked => D::DecorationCPacked,
-            Decoration::BuiltIn => D::DecorationBuiltIn,
-            Decoration::NoPerspective => D::DecorationNoPerspective,
-            Decoration::Flat => D::DecorationFlat,
-            Decoration::Patch => D::DecorationPatch,
-            Decoration::Centroid => D::DecorationCentroid,
-            Decoration::Sample => D::DecorationSample,
-            Decoration::Invariant => D::DecorationInvariant,
-            Decoration::Restrict => D::DecorationRestrict,
-            Decoration::Aliased => D::DecorationAliased,
-            Decoration::Volatile => D::DecorationVolatile,
-            Decoration::Constant => D::DecorationConstant,
-            Decoration::Coherent => D::DecorationCoherent,
-            Decoration::NonWritable => D::DecorationNonWritable,
-            Decoration::NonReadable => D::DecorationNonReadable,
-            Decoration::Uniform => D::DecorationUniform,
-            Decoration::SaturatedConversion => D::DecorationSaturatedConversion,
-            Decoration::Stream => D::DecorationStream,
-            Decoration::Location => D::DecorationLocation,
-            Decoration::Component => D::DecorationComponent,
-            Decoration::Index => D::DecorationIndex,
-            Decoration::Binding => D::DecorationBinding,
-            Decoration::DescriptorSet => D::DecorationDescriptorSet,
-            Decoration::Offset => D::DecorationOffset,
-            Decoration::XfbBuffer => D::DecorationXfbBuffer,
-            Decoration::XfbStride => D::DecorationXfbStride,
-            Decoration::FuncParamAttr => D::DecorationFuncParamAttr,
-            Decoration::FpRoundingMode => D::DecorationFPRoundingMode,
-            Decoration::FpFastMathMode => D::DecorationFPFastMathMode,
-            Decoration::LinkageAttributes => D::DecorationLinkageAttributes,
-            Decoration::NoContraction => D::DecorationNoContraction,
-            Decoration::InputAttachmentIndex => D::DecorationInputAttachmentIndex,
-            Decoration::Alignment => D::DecorationAlignment,
-            Decoration::OverrideCoverageNv => D::DecorationOverrideCoverageNV,
-            Decoration::PassthroughNv => D::DecorationPassthroughNV,
-            Decoration::ViewportRelativeNv => D::DecorationViewportRelativeNV,
-            Decoration::SecondaryViewportRelativeNv => D::DecorationSecondaryViewportRelativeNV,
-        }
-    }
-}
-
-impl spirv::Dim {
-    fn from_raw(raw: br::spv::Dim) -> Result<Self, ErrorCode> {
-        use crate::bindings::root::spv::Dim as D;
-        use crate::spirv::Dim::*;
-        match raw {
-            D::Dim1D => Ok(Dim1D),
-            D::Dim2D => Ok(Dim2D),
-            D::Dim3D => Ok(Dim3D),
-            D::DimCube => Ok(DimCube),
-            D::DimRect => Ok(DimRect),
-            D::DimBuffer => Ok(DimBuffer),
-            D::DimSubpassData => Ok(DimSubpassData),
-            _ => Err(ErrorCode::Unhandled),
-        }
-    }
-}
-
-impl spirv::ImageFormat {
-    fn from_raw(raw: br::spv::ImageFormat) -> Result<Self, ErrorCode> {
-        use crate::bindings::root::spv::ImageFormat as IF;
-        use crate::spirv::ImageFormat::*;
-        match raw {
-            IF::ImageFormatUnknown => Ok(Unknown),
-            IF::ImageFormatRgba32f => Ok(Rgba32f),
-            IF::ImageFormatRgba16f => Ok(Rgba16f),
-            IF::ImageFormatR32f => Ok(R32f),
-            IF::ImageFormatRgba8 => Ok(Rgba8),
-            IF::ImageFormatRgba8Snorm => Ok(Rgba8Snorm),
-            IF::ImageFormatRg32f => Ok(Rg32f),
-            IF::ImageFormatRg16f => Ok(Rg16f),
-            IF::ImageFormatR11fG11fB10f => Ok(R11fG11fB10f),
-            IF::ImageFormatR16f => Ok(R16f),
-            IF::ImageFormatRgba16 => Ok(Rgba16),
-            IF::ImageFormatRgb10A2 => Ok(Rgb10A2),
-            IF::ImageFormatRg16 => Ok(Rg16),
-            IF::ImageFormatRg8 => Ok(Rg8),
-            IF::ImageFormatR16 => Ok(R16),
-            IF::ImageFormatR8 => Ok(R8),
-            IF::ImageFormatRgba16Snorm => Ok(Rgba16Snorm),
-            IF::ImageFormatRg16Snorm => Ok(Rg16Snorm),
-            IF::ImageFormatRg8Snorm => Ok(Rg8Snorm),
-            IF::ImageFormatR16Snorm => Ok(R16Snorm),
-            IF::ImageFormatR8Snorm => Ok(R8Snorm),
-            IF::ImageFormatRgba32i => Ok(Rgba32i),
-            IF::ImageFormatRgba16i => Ok(Rgba16i),
-            IF::ImageFormatRgba8i => Ok(Rgba8i),
-            IF::ImageFormatR32i => Ok(R32i),
-            IF::ImageFormatRg32i => Ok(Rg32i),
-            IF::ImageFormatRg16i => Ok(Rg16i),
-            IF::ImageFormatRg8i => Ok(Rg8i),
-            IF::ImageFormatR16i => Ok(R16i),
-            IF::ImageFormatR8i => Ok(R8i),
-            IF::ImageFormatRgba32ui => Ok(Rgba32ui),
-            IF::ImageFormatRgba16ui => Ok(Rgba16ui),
-            IF::ImageFormatRgba8ui => Ok(Rgba8ui),
-            IF::ImageFormatR32ui => Ok(R32ui),
-            IF::ImageFormatRgb10a2ui => Ok(Rgb10a2ui),
-            IF::ImageFormatRg32ui => Ok(Rg32ui),
-            IF::ImageFormatRg16ui => Ok(Rg16ui),
-            IF::ImageFormatRg8ui => Ok(Rg8ui),
-            IF::ImageFormatR16ui => Ok(R16ui),
-            IF::ImageFormatR8ui => Ok(R8ui),
-            IF::ImageFormatR64ui => Ok(R64ui),
-            IF::ImageFormatR64i => Ok(R64i),
-            _ => Err(ErrorCode::Unhandled),
-        }
-    }
-}
-
 impl spirv::ImageType {
-    pub(crate) fn from_raw(ty: br::spirv_cross::SPIRType_ImageType) -> Result<ImageType, ErrorCode> {
-        Ok(ImageType {
+    pub(crate) fn from_raw(ty: br::spirv_cross::SPIRType_ImageType) -> ImageType {
+        ImageType {
             type_id: ty.type_,
-            dim: spirv::Dim::from_raw(ty.dim)?,
+            dim: ty.dim,
             depth: ty.depth,
             arrayed: ty.arrayed,
             ms: ty.ms,
             sampled: ty.sampled,
-            format: spirv::ImageFormat::from_raw(ty.format)?,
-        })
+            format: ty.format,
+        }
     }
 }
 
@@ -186,10 +31,10 @@ impl spirv::Type {
         array: Vec<u32>,
         array_size_literal: Vec<bool>,
         image: br::spirv_cross::SPIRType_ImageType,
-    ) -> Result<Self, ErrorCode> {
+    ) -> Self {
         use crate::bindings::root::spirv_cross::SPIRType_BaseType as B;
         use crate::spirv::Type::*;
-        Ok(match ty {
+        match ty {
             B::Unknown => Unknown,
             B::Void => Void,
             B::Boolean => Boolean {
@@ -198,7 +43,7 @@ impl spirv::Type {
                 array,
                 array_size_literal,
             },
-            B::Char => Char { array, array_size_literal, },
+            B::Char => Char { array, array_size_literal },
             B::Int => Int {
                 vecsize,
                 columns,
@@ -211,9 +56,9 @@ impl spirv::Type {
                 array,
                 array_size_literal,
             },
-            B::Int64 => Int64 { vecsize, array, array_size_literal, },
-            B::UInt64 => UInt64 { vecsize, array, array_size_literal, },
-            B::AtomicCounter => AtomicCounter { array, array_size_literal, },
+            B::Int64 => Int64 { vecsize, array, array_size_literal },
+            B::UInt64 => UInt64 { vecsize, array, array_size_literal },
+            B::AtomicCounter => AtomicCounter { array, array_size_literal },
             B::Half => Half {
                 vecsize,
                 columns,
@@ -237,8 +82,8 @@ impl spirv::Type {
                 array,
                 array_size_literal,
             },
-            B::Image => Image { array, array_size_literal, image: ImageType::from_raw(image)? },
-            B::SampledImage => SampledImage { array, array_size_literal, image: ImageType::from_raw(image)? },
+            B::Image => Image { array, array_size_literal, image: ImageType::from_raw(image) },
+            B::SampledImage => SampledImage { array, array_size_literal, image: ImageType::from_raw(image) },
             B::Sampler => Sampler { array, array_size_literal },
             B::SByte => SByte { vecsize, array, array_size_literal },
             B::UByte => UByte { vecsize, array, array_size_literal },
@@ -248,7 +93,7 @@ impl spirv::Type {
             B::AccelerationStructure => AccelerationStructure,
             B::RayQuery => RayQuery,
             B::Interpolant => Interpolant,
-        })
+        }
     }
 }
 
@@ -281,7 +126,7 @@ impl<TTargetData> Compiler<TTargetData> {
                 self.sc_compiler,
                 &mut result,
                 id,
-                decoration.as_raw(),
+                decoration,
             ));
         }
         Ok(result)
@@ -345,7 +190,7 @@ impl<TTargetData> Compiler<TTargetData> {
             check!(br::sc_internal_compiler_unset_decoration(
                 self.sc_compiler,
                 id,
-                decoration.as_raw(),
+                decoration,
             ));
         }
 
@@ -362,7 +207,7 @@ impl<TTargetData> Compiler<TTargetData> {
             check!(br::sc_internal_compiler_set_decoration(
                 self.sc_compiler,
                 id,
-                decoration.as_raw(),
+                decoration,
                 argument,
             ));
         }
@@ -372,7 +217,7 @@ impl<TTargetData> Compiler<TTargetData> {
 
     pub fn get_entry_points(&self) -> Result<Vec<spirv::EntryPoint>, ErrorCode> {
         let mut entry_points_raw = ptr::null_mut();
-        let mut entry_points_raw_length = 0 as usize;
+        let mut entry_points_raw_length = 0;
 
         unsafe {
             check!(br::sc_internal_compiler_get_entry_points(
@@ -388,9 +233,7 @@ impl<TTargetData> Compiler<TTargetData> {
                     let name = read_string_from_ptr(entry_point_raw.name)?;
                     let entry_point = spirv::EntryPoint {
                         name,
-                        execution_model: spirv::ExecutionModel::from_raw(
-                            entry_point_raw.execution_model,
-                        )?,
+                        execution_model: entry_point_raw.execution_model,
                         work_group_size: spirv::WorkGroupSize {
                             x: entry_point_raw.work_group_size_x,
                             y: entry_point_raw.work_group_size_y,
@@ -410,13 +253,13 @@ impl<TTargetData> Compiler<TTargetData> {
                 entry_points_raw as *mut c_void,
             ));
 
-            Ok(entry_points?)
+            entry_points
         }
     }
 
     pub fn get_active_buffer_ranges(&self, id: u32) -> Result<Vec<spirv::BufferRange>, ErrorCode> {
         let mut active_buffer_ranges_raw = ptr::null_mut();
-        let mut active_buffer_ranges_raw_length = 0 as usize;
+        let mut active_buffer_ranges_raw_length = 0;
 
         unsafe {
             check!(br::sc_internal_compiler_get_active_buffer_ranges(
@@ -459,7 +302,7 @@ impl<TTargetData> Compiler<TTargetData> {
                 check!(br::sc_internal_compiler_get_cleansed_entry_point_name(
                     self.sc_compiler,
                     ep.as_ptr(),
-                    execution_model.as_raw(),
+                    execution_model,
                     &mut cleansed_ptr
                 ));
                 let cleansed = read_string_from_ptr(cleansed_ptr)?;
@@ -474,7 +317,7 @@ impl<TTargetData> Compiler<TTargetData> {
         &self,
     ) -> Result<Vec<spirv::SpecializationConstant>, ErrorCode> {
         let mut constants_raw = ptr::null_mut();
-        let mut constants_raw_length = 0 as usize;
+        let mut constants_raw_length = 0;
 
         unsafe {
             check!(br::sc_internal_compiler_get_specialization_constants(
@@ -500,7 +343,7 @@ impl<TTargetData> Compiler<TTargetData> {
 
             check!(br::sc_internal_free_pointer(constants_raw as *mut c_void));
 
-            Ok(constants?)
+            constants
         }
     }
 
@@ -534,7 +377,7 @@ impl<TTargetData> Compiler<TTargetData> {
             let array = read_into_vec_from_ptr(raw.array, raw.array_size);
             let array_size_literal = read_into_vec_from_ptr(raw.array_size_literal, raw.array_size);
             let image = raw.image;
-            let result = Type::from_raw(raw.type_, raw.vecsize, raw.columns, member_types, array, array_size_literal, image)?;
+            let result = Type::from_raw(raw.type_, raw.vecsize, raw.columns, member_types, array, array_size_literal, image);
 
             if raw.member_types_size > 0 {
                 check!(br::sc_internal_free_pointer(
@@ -577,7 +420,7 @@ impl<TTargetData> Compiler<TTargetData> {
                 self.sc_compiler,
                 id,
                 index,
-                decoration.as_raw(),
+                decoration,
                 &mut result,
             ));
         }
@@ -596,7 +439,7 @@ impl<TTargetData> Compiler<TTargetData> {
                 self.sc_compiler,
                 id,
                 index,
-                decoration.as_raw(),
+                decoration,
                 argument,
             ));
         }
@@ -639,7 +482,7 @@ impl<TTargetData> Compiler<TTargetData> {
             let shader_resources_raw = shader_resources_raw.assume_init();
 
             let fill_resources = |array_raw: &br::ScResourceArray| {
-                let resources = (0..array_raw.num as usize)
+                let resources = (0..array_raw.num)
                     .map(|i| {
                         let resource_raw = read_from_ptr::<br::ScResource>(array_raw.data.add(i));
                         let name = read_string_from_ptr(resource_raw.name)?;
@@ -661,6 +504,33 @@ impl<TTargetData> Compiler<TTargetData> {
                 resources
             };
 
+            let fill_builtin_resources = |array_raw: &br::ScBuiltInResourceArray| {
+                let resources = (0..array_raw.num)
+                    .map(|i| {
+                        let resource_raw = read_from_ptr::<br::ScBuiltInResource>(array_raw.data.add(i));
+                        let name = read_string_from_ptr(resource_raw.resource.name)?;
+                        check!(br::sc_internal_free_pointer(
+                            resource_raw.resource.name as *mut c_void,
+                        ));
+
+                        Ok(spirv::BuiltInResource {
+                            builtin: spirv::BuiltIn::from_raw(resource_raw.builtin),
+                            value_type_id: resource_raw.value_type_id,
+                            resource: spirv::Resource {
+                                id: resource_raw.resource.id,
+                                type_id: resource_raw.resource.type_id,
+                                base_type_id: resource_raw.resource.base_type_id,
+                                name,
+                            },
+                        })
+                    })
+                    .collect::<Result<Vec<_>, ErrorCode>>();
+
+                check!(br::sc_internal_free_pointer(array_raw.data as *mut c_void));
+
+                resources
+            };
+
             let uniform_buffers = fill_resources(&shader_resources_raw.uniform_buffers)?;
             let storage_buffers = fill_resources(&shader_resources_raw.storage_buffers)?;
             let stage_inputs = fill_resources(&shader_resources_raw.stage_inputs)?;
@@ -669,10 +539,14 @@ impl<TTargetData> Compiler<TTargetData> {
             let storage_images = fill_resources(&shader_resources_raw.storage_images)?;
             let sampled_images = fill_resources(&shader_resources_raw.sampled_images)?;
             let atomic_counters = fill_resources(&shader_resources_raw.atomic_counters)?;
+            let acceleration_structures = fill_resources(&shader_resources_raw.acceleration_structures)?;
             let push_constant_buffers =
                 fill_resources(&shader_resources_raw.push_constant_buffers)?;
+            let shader_record_buffers = fill_resources(&shader_resources_raw.shader_record_buffers)?;
             let separate_images = fill_resources(&shader_resources_raw.separate_images)?;
             let separate_samplers = fill_resources(&shader_resources_raw.separate_samplers)?;
+            let builtin_inputs = fill_builtin_resources(&shader_resources_raw.builtin_inputs)?;
+            let builtin_outputs = fill_builtin_resources(&shader_resources_raw.builtin_outputs)?;
 
             Ok(spirv::ShaderResources {
                 uniform_buffers,
@@ -683,9 +557,13 @@ impl<TTargetData> Compiler<TTargetData> {
                 storage_images,
                 sampled_images,
                 atomic_counters,
+                acceleration_structures,
                 push_constant_buffers,
+                shader_record_buffers,
                 separate_images,
                 separate_samplers,
+                builtin_inputs,
+                builtin_outputs,
             })
         }
     }
